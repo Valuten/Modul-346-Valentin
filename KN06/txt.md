@@ -35,4 +35,4 @@ Swagger via DNS:
 
 ## Aufgabe D: 
 
-Nich fertig bekommen.
+Funktioniert ; )
