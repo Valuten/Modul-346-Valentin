@@ -1,0 +1,70 @@
+#cloud-config
+users:
+  - name: valen # sets the username to "ubuntu"
+    sudo: ALL=(ALL) NOPASSWD:ALL # Grants the user passwordless sudo privileges
+    groups: users, admin, sudo # Adds the user to groups: "users" and "admin" 
+    home: /home/ubuntu # sets the default home directory 
+    shell: /bin/bash  # sets the default shell for the user 
+    ssh_authorized_keys: # Adds the specified SSH key for the user
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDyI2ywdr3544Hj7wYTo+jJnn6cs6SM785iJ+DjhIpxbCagovo5GYfKD0V8xkkR0LqAg4tnbzNdSMrRQBC9U4uAuiLi//9hCWpMqJVI3dwGH4g1L3uq2nsCq/aPLid2K7FkPtTrOxmEDlf5mChurttyD/0cMYUq2wtWfVJijI4TnbHl/ai/vYtnEt21Bx0tAbNHWgK5u3PodA2mElQa9/nmaAXVdqDXFB8uQpR7juSoP9P/Tbn6AiSjKo4bXlK67gNnaeOVqsrFNat7ujPjoWW8+ZZaonJcitdtMqzPv32bJNxPCVSGOWgUfLJIjeXxTIh7VYhYmsLUDb0H4hJKT3/9 aws-key
+  
+  - name: teacher # sets the username to "ubuntu"
+    sudo: ALL=(ALL) NOPASSWD:ALL # Grants the user passwordless sudo privileges
+    groups: users, admin, sudo # Adds the user to groups: "users" and "admin" 
+    home: /home/ubuntu # sets the default home directory 
+    shell: /bin/bash  # sets the default shell for the user 
+    ssh_authorized_keys: # Adds the specified SSH key for the user
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC0WGP1EZykEtv5YGC9nMiPFW3U3DmZNzKFO5nEu6uozEHh4jLZzPNHSrfFTuQ2GnRDSt+XbOtTLdcj26+iPNiFoFha42aCIzYjt6V8Z+SQ9pzF4jPPzxwXfDdkEWylgoNnZ+4MG1lNFqa8aO7F62tX0Yj5khjC0Bs7Mb2cHLx1XZaxJV6qSaulDuBbLYe8QUZXkMc7wmob3PM0kflfolR3LE7LResIHWa4j4FL6r5cQmFlDU2BDPpKMFMGUfRSFiUtaWBNXFOWHQBC2+uKmuMPYP4vJC9sBgqMvPN/X2KyemqdMvdKXnCfrzadHuSSJYEzD64Cve5Zl9yVvY4AqyBD aws-key
+
+ssh_pwauth: false # disables SSH password auth
+disable_root: false  # allows root login
+package_update: true # Updates all packages
+
+packages:
+  - apache2
+  - php
+  - libapache2-mod-php
+  - adminer
+  - php-mysqli
+
+write_files:
+  - path: /var/www/html/info.php
+    content: |
+      <?php
+      phpinfo();
+      ?>
+
+  - path: /var/www/html/db.php
+  # Change ip from public 23.20.92.131 to private 172.31.80.100
+    content: |
+      <?php
+      //database
+        $servername = "172.31.80.100"; 
+        $username = "admin";
+        $password = "password";
+        $dbname = "mysql";
+ 
+        // Create connection
+        $conn = new mysqli($servername, $username, $password, $dbname);
+        // Check connection
+        if ($conn->connect_error) {
+                die("Connection failed: " . $conn->connect_error);
+        }
+ 
+        $sql = "select Host, User from mysql.user;";
+        $result = $conn->query($sql);
+        while($row = $result->fetch_assoc()){
+                echo("<li>" . $row["Host"] . " / " . $row["User"] . "</li>");
+        }
+        //var_dump($result);
+      ?>
+
+# writing both files works work 
+# Found error, Web-Server is missing outbound rule, edit sg-0b1c5d5e7f16c3845 - WebServer KN04 New security group so it has the public internet outbound rule and can install stuff
+# Also add Inbound rule tcsp port 22 acess so I can ssh connect
+runcmd: 
+  - systemctl enable apache2
+  - systemctl start apache2
+  - a2enconf adminer
+  - systemctl restart apache2
+  - echo "Webserver setup complete."
